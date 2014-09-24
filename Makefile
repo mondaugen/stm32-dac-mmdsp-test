@@ -1,7 +1,7 @@
 # The driver is compiled in different ways, depending on what chip we are
 # compiling for.
 
-DEBUG_BUILD=0
+DEBUG_BUILD=1
 STM_CHIP_SET=STM32F429_439xx
 STM_DRIVER_PATH = $(HOME)/Documents/archives/STM32F4xx_DSP_StdPeriph_Lib_V1.3.0/Libraries/STM32F4xx_StdPeriph_Driver
 STM_DRIVER_HDRS_STD = stm32f4xx_adc.h \
@@ -67,9 +67,38 @@ STM_DRIVER_DEP  = inc/stm32f4xx_conf.h inc/stm32f4xx.h $(wildcard $(STM_DRIVER_I
 
 CMSIS_PATH = $(HOME)/Documents/archives/CMSIS
 
+MMMIDI_PATH      = $(HOME)/Documents/development/mmmidi
+MMMIDI_SRCS_PATH = $(MMMIDI_PATH)/src
+MMMIDI_SRCS      = $(wildcard $(MMMIDI_SRCS_PATH)/*.c)
+MMMIDI_INC_PATH  = $(MMMIDI_PATH)/inc
+MMMIDI_OBJS      = $(MMMIDI_SRCS:$(MMMIDI_SRCS_PATH)/%.c=objs/%.o)
+MMMIDI_DEP       = $(wildcard $(MMMIDI_INC_PATH)/*.h)
+
+MMDSP_PATH      = $(HOME)/Documents/development/mm_dsp
+MMDSP_SRCS_PATH = $(MMDSP_PATH)/src
+MMDSP_SRCS      = $(wildcard $(MMDSP_SRCS_PATH)/*.c)
+MMDSP_INC_PATH  = $(MMDSP_PATH)/inc
+MMDSP_OBJS      = $(MMDSP_SRCS:$(MMDSP_SRCS_PATH)/%.c=objs/%.o)
+MMDSP_DEP       = $(wildcard $(MMDSP_INC_PATH)/*.h)
+
+MMPRIMITIVES_PATH      = $(HOME)/Documents/development/mm_primitives
+MMPRIMITIVES_SRCS_PATH = $(MMPRIMITIVES_PATH)/src
+MMPRIMITIVES_SRCS      = $(wildcard $(MMPRIMITIVES_SRCS_PATH)/*.c)
+MMPRIMITIVES_INC_PATH  = $(MMPRIMITIVES_PATH)/inc
+MMPRIMITIVES_OBJS      = $(MMPRIMITIVES_SRCS:$(MMPRIMITIVES_SRCS_PATH)/%.c=objs/%.o)
+MMPRIMITIVES_DEP       = $(wildcard $(MMPRIMITIVES_INC_PATH)/*.h)
+
+NEDATASTRUCTURES_PATH      = $(HOME)/Documents/development/mm_primitives
+NEDATASTRUCTURES_SRCS_PATH = $(NEDATASTRUCTURES_PATH)/src
+NEDATASTRUCTURES_SRCS      = $(wildcard $(NEDATASTRUCTURES_SRCS_PATH)/*.c)
+NEDATASTRUCTURES_INC_PATH  = $(NEDATASTRUCTURES_PATH)/inc
+NEDATASTRUCTURES_OBJS      = $(NEDATASTRUCTURES_SRCS:$(NEDATASTRUCTURES_SRCS_PATH)/%.c=objs/%.o)
+NEDATASTRUCTURES_DEP       = $(wildcard $(NEDATASTRUCTURES_INC_PATH)/*.h)
+
 PROJ_INC_PATH = ./inc
 
-INC  = $(PROJ_INC_PATH) $(CMSIS_PATH)/Include $(STM_DRIVER_INC)
+INC  = $(PROJ_INC_PATH) $(CMSIS_PATH)/Include $(STM_DRIVER_INC) $(MMMIDI_INC_PATH) \
+	   $(MMDSP_INC_PATH) $(MMPRIMITIVES_INC_PATH) $(NEDATASTRUCTURES_INC_PATH)
 
 PROJ_SRCS_PATH = src
 PROJ_SRCS = $(wildcard $(PROJ_SRCS_PATH)/*.c)
@@ -80,7 +109,8 @@ PROJ_OBJS_ASM = $(patsubst $(PROJ_SRCS_PATH)/%, objs/%, $(addsuffix .o, $(basena
 
 PROJ_DEP = $(wildcard $(PROJ_INC_PATH)/*.h)
 
-OBJS = $(STM_DRIVER_OBJS) $(PROJ_OBJS) $(PROJ_OBJS_ASM)
+OBJS = $(STM_DRIVER_OBJS) $(PROJ_OBJS) $(PROJ_OBJS_ASM) $(MMMIDI_OBJS) \
+	   $(MMDSP_OBJS) $(MMPRIMITIVES_OBJS) $(NEDATASTRUCTURES_OBJS)
 
 BIN = main.elf
 
@@ -97,7 +127,6 @@ LDSCRIPT = STM32F429ZI_FLASH.ld
 LDFLAGS = -T$(LDSCRIPT) -Xlinker
 ifeq ($(DEBUG_BUILD),0)
 	LDFLAGS += --gc-sections
-	PROJ_CFLAGS = -O0
 endif
 
 CC = arm-none-eabi-gcc
@@ -115,13 +144,29 @@ proj: $(BIN)
 $(STM_DRIVER_OBJS): objs/%.o: $(STM_DRIVER_PATH)/src/%.c $(STM_DRIVER_DEP)
 	$(CC) -c $(CFLAGS) $< -o $@
 
+# compile mmmidi
+$(MMMIDI_OBJS): objs/%.o: $(MMMIDI_SRCS_PATH)/%.c $(MMMIDI_DEP)
+	$(CC) -c $(CFLAGS) $< -o $@
+	
+# compile mmdsp 
+$(MMDSP_OBJS): objs/%.o: $(MMDSP_SRCS_PATH)/%.c $(MMDSP_DEP)
+	$(CC) -c $(CFLAGS) $< -o $@
+	
+# compile mm_primitives
+$(MMPRIMITIVES_OBJS): objs/%.o: $(MMPRIMITIVES_SRCS_PATH)/%.c $(MMPRIMITIVES_DEP)
+	$(CC) -c $(CFLAGS) $< -o $@
+
+# compile ne_datastructures 
+$(NEDATASTRUCTURES_OBJS): objs/%.o: $(NEDATASTRUCTURES_SRCS_PATH)/%.c $(NEDATASTRUCTURES_DEP)
+	$(CC) -c $(CFLAGS) $< -o $@
+
 # compile asm
 $(PROJ_OBJS_ASM): objs/%.o: $(PROJ_SRCS_PATH)/%.s $(PROJ_DEP)
 	$(CC) -c $(CFLAGS) $< -o $@
 
 # compile c
 $(PROJ_OBJS): objs/%.o: $(PROJ_SRCS_PATH)/%.c $(PROJ_DEP)
-	$(CC) -c $(CFLAGS) $(PROJ_CFLAGS) $< -o $@
+	$(CC) -c $(CFLAGS) $< -o $@
 
 $(BIN): $(OBJS)
 	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@
@@ -137,4 +182,5 @@ clean:
 	rm objs/*
 
 ctags:
-	ctags -R . $(STM_DRIVER_PATH) $(CMSIS_PATH)
+	ctags -R . $(STM_DRIVER_PATH) $(CMSIS_PATH) $(MMMIDI_PATH) $(MMDSP_PATH) \
+		$(MMPRIMITIVES_PATH) $(NEDATASTRUCTURES_PATH)

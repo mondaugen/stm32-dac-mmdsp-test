@@ -83,7 +83,7 @@ void DAC_Setup(void)
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_DAC, ENABLE);
     RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);
     RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA1, ENABLE);
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);
 
     /* Set up GPIO for DAC (alternate function) */
     GPIO_StructInit(&GPIO_InitStruct);
@@ -99,13 +99,13 @@ void DAC_Setup(void)
     TIM_TimerInitStruct.TIM_CounterMode = TIM_CounterMode_Up;
     TIM_TimerInitStruct.TIM_Period = 1000; /* Tick 45000 times/sec (weird sampling rate) */
     TIM_TimerInitStruct.TIM_ClockDivision = 0;
-    TIM_TimeBaseInit(TIM2, &TIM_TimerInitStruct);
-    TIM_SelectOutputTrigger(TIM2, TIM_TRGOSource_Update);
-    TIM_Cmd(TIM2, ENABLE);
+    TIM_TimeBaseInit(TIM4, &TIM_TimerInitStruct);
+    TIM_SelectOutputTrigger(TIM4, TIM_TRGOSource_Update);
+    TIM_Cmd(TIM4, ENABLE);
 
     /* Setup DAC */
     DAC_StructInit(&DAC_InitStruct);
-    DAC_InitStruct.DAC_Trigger = DAC_Trigger_T2_TRGO; /* Timer 2 triggers conversion */
+    DAC_InitStruct.DAC_Trigger = DAC_Trigger_T4_TRGO; /* Timer 2 triggers conversion */
     DAC_Init(DAC_Channel_1, &DAC_InitStruct);
     DAC_SoftwareTriggerCmd(DAC_Channel_1, ENABLE);
     
