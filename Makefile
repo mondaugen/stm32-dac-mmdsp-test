@@ -1,7 +1,7 @@
 # The driver is compiled in different ways, depending on what chip we are
 # compiling for.
 
-DEBUG_BUILD=1
+DEBUG_BUILD?=1
 STM_CHIP_SET=STM32F429_439xx
 STM_DRIVER_PATH = $(HOME)/Documents/archives/STM32F4xx_DSP_StdPeriph_Lib_V1.3.0/Libraries/STM32F4xx_StdPeriph_Driver
 STM_DRIVER_HDRS_STD = stm32f4xx_adc.h \
@@ -110,7 +110,7 @@ PROJ_OBJS_ASM = $(patsubst $(PROJ_SRCS_PATH)/%, objs/%, $(addsuffix .o, $(basena
 PROJ_DEP = $(wildcard $(PROJ_INC_PATH)/*.h)
 
 PROJ_DATA_PATH = ./data
-PROJ_DATA_SRCS = $(wildcard $(PROJ_DATA_PATH)/*.raw)
+PROJ_DATA_SRCS = $(wildcard $(PROJ_DATA_PATH)/*.s)
 PROJ_DATA_OBJS = $(patsubst $(PROJ_DATA_PATH)/%, objs/%, $(addsuffix .o, $(basename $(PROJ_DATA_SRCS))))
 
 OBJS = $(STM_DRIVER_OBJS) $(PROJ_OBJS) $(PROJ_OBJS_ASM) $(MMMIDI_OBJS) \
@@ -133,6 +133,7 @@ ifeq ($(DEBUG_BUILD),0)
 	LDFLAGS += --gc-sections
 endif
 
+AS = arm-none-eabi-as
 CC = arm-none-eabi-gcc
 OBJCOPY = arm-none-eabi-objcopy
 LD = arm-none-eabi-ld
@@ -175,12 +176,12 @@ $(PROJ_OBJS): objs/%.o: $(PROJ_SRCS_PATH)/%.c $(PROJ_DEP)
 	$(CC) -c $(CFLAGS) $< -o $@
 
 # "compile" raw data
-$(PROJ_DATA_OBJS): objs/%.o: $(PROJ_DATA_PATH)/%.raw
+$(PROJ_DATA_OBJS): objs/%.o: $(PROJ_DATA_PATH)/%.s
 # this copys the binary (raw) data to the format we want for linking without
 # needing to specify the architecture
-	$(LD) -r -b binary -o $@ $<;
+	$(CC) -c $< -o $@;
 # this changes the section name so the data is put into flash instead of ram	
-	$(OBJCOPY) --rename-section .data=.rodata $@ $@
+	$(OBJCOPY) --rename-section .text=.rodata $@ $@
 
 $(BIN): $(OBJS)
 	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@
