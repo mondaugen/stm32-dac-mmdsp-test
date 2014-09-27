@@ -32,7 +32,7 @@ void DAC_Setup(void)
     TIM_TimeBaseStructInit(&TIM_TimerInitStruct);
     TIM_TimerInitStruct.TIM_Prescaler = 1;
     TIM_TimerInitStruct.TIM_CounterMode = TIM_CounterMode_Up;
-    TIM_TimerInitStruct.TIM_Period = 1000; /* Tick 45000 times/sec (weird sampling rate) */
+    TIM_TimerInitStruct.TIM_Period = 2000; /* Tick 45000 times/sec (weird sampling rate) */
     TIM_TimerInitStruct.TIM_ClockDivision = 0;
     TIM_TimeBaseInit(TIM4, &TIM_TimerInitStruct);
     TIM_SelectOutputTrigger(TIM4, TIM_TRGOSource_Update);

@@ -4,7 +4,7 @@
 #include "stm32f4xx.h"
 
 #define DAC_DMA_BUF_SIZE 64
-#define DAC_SAMPLE_RATE (45000.0) 
+#define DAC_SAMPLE_RATE (22500.0) 
 
 void DAC_Setup(void);
 #define DAC_INTERRUPT() \
