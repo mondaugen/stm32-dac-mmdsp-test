@@ -16,9 +16,14 @@
 #include "mm_wavtab.h"
 #include "mm_sigconst.h"
 
+#define NUM_SAMPLE_PLAYER_SIG_PROCS 3 
+
 extern uint16_t *curDMAData;
 extern MMSample GrandPianoFileDataStart;
 extern MMSample GrandPianoFileDataEnd;
+
+MMSamplePlayerSigProc *spsps[NUM_SAMPLE_PLAYER_SIG_PROCS];
+float spNotes[] = {49.,53.,56.};
 
 int main(void)
 {
@@ -63,14 +68,17 @@ int main(void)
     samples.length = sampleFileDataEnd - sampleFileDataStart;
 
     /* make a samplePlayerSigProc */
-    MMSamplePlayerSigProc *samplePlayerSigProc = MMSamplePlayerSigProc_new();
-    MMSamplePlayerSigProc_init(samplePlayerSigProc);
-    samplePlayerSigProc->samples = &samples;
-    samplePlayerSigProc->rate = 0.5;
-    samplePlayerSigProc->parent = &samplePlayer;
-    samplePlayerSigProc->loop = 1;
-    /* insert in signal chain */
-    MMSigProc_insertAfter(&samplePlayer.placeHolder, samplePlayerSigProc);
+    size_t i;
+    for (i = 0; i < NUM_SAMPLE_PLAYER_SIG_PROCS; i++) {
+        spsps[i] = MMSamplePlayerSigProc_new();
+        MMSamplePlayerSigProc_init(spsps[i]);
+        spsps[i]->samples = &samples;
+        spsps[i]->rate = pow(2,(spNotes[i] - 59)/12.0);
+        spsps[i]->parent = &samplePlayer;
+        spsps[i]->loop = 1;
+        /* insert in signal chain */
+        MMSigProc_insertAfter(&samplePlayer.placeHolder, spsps[i]);
+    }
 
     while (1) {
         while (curDMAData == NULL);/* wait for request to fill with data */
